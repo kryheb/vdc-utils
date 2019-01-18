@@ -13,12 +13,15 @@ CORTEXA9_SYS='arm-poky-linux-gnueabi'
 X86='x86'
 ARCH_SET=$AARCH64 #dssip by default
 
+TOOLCHAIN_PATH_POKY202='/opt/poky/2.0.2'
+TOOLCHAIN_PATH_POKY252='/opt/poky/2.5.2'
+TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY252
+
 # flags
 CONFIGURE=0
 CLEAN=0
 BUILD=0
 TEST=0
-SANITIZER=0
 DEBUG=0
 
 
@@ -31,10 +34,12 @@ Configure and build vdc in current directory.
 	--arch=[arch]        	select target architecture, when none aarch64 is set
 				[aarch64|armv5|cortexa9|x86]
 	--configure|-c 		configure project
-	--build|-b		incremental build, default when no arguments 
+	--build|-b		incremental build, default when no arguments
 	--debug|-d		enable build with debug flag
 	--rebuild|-rb		rebuild project, ie. make clean and build
 	--test|-t		run unit tests
+	--poky-version|-p	poky toolchain version, default =2.5.2
+				[2.0.2, 2.5.2]
 "
 	exit
 }
@@ -49,7 +54,7 @@ function notice() {
 	msg=${1}
 	msg_len=${#msg}
 	sep_len=$((($(tput cols)-${msg_len} -2)/2))
-	sep=$(printf '%0.s-' $(seq 1 $sep_len)) 
+	sep=$(printf '%0.s-' $(seq 1 $sep_len))
 	echo -e "${YELLOW}${sep} ${1} ${sep}${NC}"
 	echo -ne "${NC}"
 }
@@ -68,8 +73,8 @@ function parse_args() {
 			--help|-h )
 				print_help;;
 			--configure|-c )
-	  			CONFIGURE=1;;
-  			--rebuild|-rb )
+				CONFIGURE=1;;
+			--rebuild|-rb )
 				CLEAN=1;&
 			--build|-b )
 				BUILD=1;;
@@ -77,8 +82,6 @@ function parse_args() {
 				DEBUG=1;;
 			--test|-t )
 				TEST=1;;
-			--sanitizer|-s )
-				SANITIZER=1;;
 			--arch=aarch64 )
 				ARCH_SET=$AARCH64;;
 			--arch=armv5 )
@@ -87,6 +90,10 @@ function parse_args() {
 				ARCH_SET=$CORTEXA9;;
 			--arch=x86 )
 				ARCH_SET=$X86;;
+			--poky-version=2.0.2|-p=2.0.2 )
+				TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY202;;
+			--poky-version=2.5.2|-p=2.5.2 )
+				TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY252;;
 			*)
 				err "unknown command $arg"
 				print_help;;
@@ -96,23 +103,19 @@ function parse_args() {
 
 # setup toolchain
 function source_toolchain() {
-        notice "Architecture set $ARCH_SET"
+	notice "Architecture set $ARCH_SET"
 	if [ ! "$ARCH_SET" == "$X86" ]; then
-		notice "Source poky toolchain"
-        	export CFLAGS=" -g -O0  --sysroot=/opt/poky/2.0.2/sysroots/${ARCH_SET}"
-        	export CXXFLAGS=" -g -O0  --sysroot=/opt/poky/2.0.2/sysroots/${ARCH_SET}"
-        	export LDFLAGS=" --sysroot=/opt/poky/2.0.2/sysroots/${ARCH_SET}"
-        	export CPPFLAGS=" --sysroot=/opt/poky/2.0.2/sysroots/${ARCH_SET}"
+		notice "Source poky toolchain ${TOOLCHAIN_PATH}"
+		export CFLAGS=" -g -O0  --sysroot=${TOOLCHAIN_PATH}/sysroots/${ARCH_SET}"
+		export CXXFLAGS=" -g -O0  --sysroot=${TOOLCHAIN_PATH}/sysroots/${ARCH_SET}"
+		export LDFLAGS=" --sysroot=${TOOLCHAIN_PATH}/sysroots/${ARCH_SET}"
+		export CPPFLAGS=" --sysroot=${TOOLCHAIN_PATH}/sysroots/${ARCH_SET}"
 
 
-		source "/opt/poky/2.0.2/site-config-${ARCH_SET}"
-        	source "/opt/poky/2.0.2/environment-setup-${ARCH_SET}"
+		source "${TOOLCHAIN_PATH}/site-config-${ARCH_SET}"
+		source "${TOOLCHAIN_PATH}/environment-setup-${ARCH_SET}"
 	fi
 
-	if (( $SANITIZER == 1 )); then
-		notice "Sanitizer is enabled"
-		SANITIZER_OPTS=' --enable-sanitizer '
-	fi
 }
 
 # build functions
@@ -125,7 +128,7 @@ function configure_poky() {
 		TARGET_ARCH=$ARCH_SET
 	fi
 
-	local CONF_OPTS="--with-libtool-sysroot=/opt/poky/2.0.2/sysroots/${ARCH_SET} --host=${HOST_ARCH} --build=x86_64-linux --target=${TARGET_ARCH} ${SANITIZER_OPTS}"
+	local CONF_OPTS="--with-libtool-sysroot=${TOOLCHAIN_PATH}/sysroots/${ARCH_SET} --host=${HOST_ARCH} --build=x86_64-linux --target=${TARGET_ARCH} "
 	
 	if (( $DEBUG == 1 ));then
 		CONF_OPTS="${CONF_OPTS} --enable-debug"
@@ -135,7 +138,7 @@ function configure_poky() {
 }
 
 function configure_x86() {
-	./configure ${SANITIZER_OPTS}
+	./configure
 }
 
 function configure() {
@@ -166,8 +169,8 @@ function build() {
 
 function build_test() {
 	notice "Building test..."
-		make test
-		check_err "test build"
+	make test
+	check_err "test build"
 
 }
 
@@ -184,7 +187,7 @@ source_toolchain
 
 if (( $CONFIGURE != 1 )) && \
 	(( $CLEAN != 1 )) && \
-       	(( $BUILD != 1)) && \
+	(( $BUILD != 1)) && \
 	(( $TEST !=1 )); then
 	BUILD=1 # if no build params, run incremental build
 fi
@@ -195,18 +198,13 @@ if (( $CONFIGURE ==  1 )); then
 fi
 
 if (( $CLEAN ==  1 )); then 
-        make_clean
+	make_clean
 fi
 
 if (( $BUILD ==  1 )); then 
-        build
+	build
 fi
 
 if (( $TEST == 1 )); then
 	run_test
 fi
-
-#!/bin/bash
-
-# console colors
-RED='\033[0;31m'
