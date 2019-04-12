@@ -8,6 +8,7 @@ NC='\033[0m'
 
 function log_err {
 	>&2 echo -e "${RED}${@}"
+	>&2 echo -e "${NC}"
 }
 
 # params: result | cmd params
@@ -37,8 +38,8 @@ function upload {
 	check_result "upload ($@)"
 }
 
-service_cmd stop vdc-${VDC}
-upload ${VDC}vdc vdc-${VDC}
+service_cmd stop vdc-${VDC} && \
+upload ${VDC}vdc vdc-${VDC} && \
 service_cmd start vdc-${VDC}
 
 
