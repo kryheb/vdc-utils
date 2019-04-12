@@ -8,13 +8,16 @@ NC='\033[0m'
 # architectures sysroots
 AARCH64='aarch64-poky-linux'
 ARMV5E='armv5e-poky-linux-gnueabi'
-CORTEXA9='cortexa9hf-vfp-neon-poky-linux-gnueabi'
+CORTEXA9='armv7ahf-neon-poky-linux-gnueabi'
 CORTEXA9_SYS='arm-poky-linux-gnueabi'
+RPI='arm1176jzfshf-vfp-poky-linux-gnueabi'
 X86='x86'
 ARCH_SET=$AARCH64 #dssip by default
 
 TOOLCHAIN_PATH_POKY202='/opt/poky/2.0.2'
 TOOLCHAIN_PATH_POKY252='/opt/poky/2.5.2'
+TOOLCHAIN_PATH_POKY261='/opt/poky/2.6.1'
+
 TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY252
 
 # flags
@@ -32,7 +35,7 @@ Usage: build-vds  [OPTIONS]...
 Configure and build vdc in current directory.
 	
 	--arch=[arch]        	select target architecture, when none aarch64 is set
-				[aarch64|armv5|cortexa9|x86]
+				[aarch64|armv5|cortexa9|x86|rpi]
 	--configure|-c 		configure project
 	--build|-b		incremental build, default when no arguments
 	--debug|-d		enable build with debug flag
@@ -90,10 +93,14 @@ function parse_args() {
 				ARCH_SET=$CORTEXA9;;
 			--arch=x86 )
 				ARCH_SET=$X86;;
+			--arch=rpi )
+				ARCH_SET=$RPI;;
 			--poky-version=2.0.2|-p=2.0.2 )
 				TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY202;;
 			--poky-version=2.5.2|-p=2.5.2 )
 				TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY252;;
+			--poky-version=2.6.1|-p=2.6.1 )
+				TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY261;;
 			*)
 				err "unknown command $arg"
 				print_help;;
@@ -163,7 +170,7 @@ function make_clean() {
 
 function build() {
 	notice "Building..."
-	make -j4
+	make -j8
 	check_err "build"
 }
 
@@ -175,8 +182,8 @@ function build_test() {
 }
 
 function run_test() {
+	cd test
 	build_test
-	
 	notice "Testing..."
 	./test
 }
