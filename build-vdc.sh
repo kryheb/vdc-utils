@@ -29,6 +29,9 @@ TEST=0
 CHECK=0
 DEBUG=0
 
+CXXFLAGS_OPT=' -O2  '
+CFLAGS_OPT=' -O2 '
+
 
 # log functions
 function print_help() {
@@ -146,9 +149,11 @@ function configure_poky() {
 	
 	if (( $DEBUG == 1 ));then
 		CONF_OPTS="${CONF_OPTS} --enable-debug"
+		CXXFLAGS_OPT=" -O0 -g "
+		CFLAGS_OPT=" -O0 -g "
 	fi
 
-	./configure $CONF_OPTS
+	./configure $CONF_OPTS CXXFLAGS="${CXXFLAGS_OPT}" CFLAGS="${CFLAGS_OPT}"
 }
 
 function configure_x86() {
