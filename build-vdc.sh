@@ -17,20 +17,22 @@ ARCH_SET=$AARCH64 #dssip by default
 TOOLCHAIN_PATH_POKY202='/opt/poky/2.0.2'
 TOOLCHAIN_PATH_POKY252='/opt/poky/2.5.2'
 TOOLCHAIN_PATH_POKY261='/opt/poky/2.6.1'
+TOOLCHAIN_PATH_POKY271='/opt/poky/2.7.1'
 
-TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY252
+TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY271
 
 # flags
 CONFIGURE=0
 CLEAN=0
 BUILD=0
 TEST=0
+CHECK=0
 DEBUG=0
 
 
 # log functions
 function print_help() {
-	 printf "
+	printf "
 Usage: build-vds  [OPTIONS]... 
 Configure and build vdc in current directory.
 	
@@ -41,7 +43,8 @@ Configure and build vdc in current directory.
 	--debug|-d		enable build with debug flag
 	--rebuild|-rb		rebuild project, ie. make clean and build
 	--test|-t		run unit tests
-	--poky-version|-p	poky toolchain version, default =2.5.2
+	--check			run unit tests with check cmd
+	--poky-version|-p	poky toolchain version, default =2.7.1
 				[2.0.2, 2.5.2]
 "
 	exit
@@ -85,6 +88,8 @@ function parse_args() {
 				DEBUG=1;;
 			--test|-t )
 				TEST=1;;
+				--check )
+				CHECK=1;;
 			--arch=aarch64 )
 				ARCH_SET=$AARCH64;;
 			--arch=armv5 )
@@ -99,6 +104,8 @@ function parse_args() {
 				TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY202;;
 			--poky-version=2.5.2|-p=2.5.2 )
 				TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY252;;
+			--poky-version=2.5.2|-p=2.7.1 )
+				TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY271;;
 			--poky-version=2.6.1|-p=2.6.1 )
 				TOOLCHAIN_PATH=$TOOLCHAIN_PATH_POKY261;;
 			*)
@@ -176,9 +183,9 @@ function build() {
 
 function build_test() {
 	notice "Building test..."
-	make test
+	make test -j8
 	check_err "test build"
-
+	rm ./DsParams.sqlite3
 }
 
 function run_test() {
@@ -186,6 +193,14 @@ function run_test() {
 	build_test
 	notice "Testing..."
 	./test
+}
+
+function run_check() {
+	cd test
+	notice "Building test..."
+	make check -j8
+	check_err "test build"
+	rm ./DsParams.sqlite3
 }
 
 #run script
@@ -214,4 +229,8 @@ fi
 
 if (( $TEST == 1 )); then
 	run_test
+fi
+
+if (( $CHECK == 1 )); then
+	run_check
 fi
