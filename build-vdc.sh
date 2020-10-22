@@ -8,8 +8,11 @@ NC='\033[0m'
 # architectures sysroots
 AARCH64='aarch64-poky-linux'
 ARMV5E='armv5e-poky-linux-gnueabi'
-CORTEXA9='armv7ahf-neon-poky-linux-gnueabi'
+#CORTEXA9='armv7ahf-neon-poky-linux-gnueabi'
+#CORTEXA9_SYS='arm-poky-linux-gnueabi'
+CORTEXA9='armv7at2hf-neon-poky-linux-gnueabi'
 CORTEXA9_SYS='arm-poky-linux-gnueabi'
+
 RPI='arm1176jzfshf-vfp-poky-linux-gnueabi'
 X86='x86'
 ARCH_SET=$AARCH64 #dssip by default
@@ -157,7 +160,11 @@ function configure_poky() {
 }
 
 function configure_x86() {
-	./configure
+	if (( $DEBUG == 1 ));then
+		CXXFLAGS_OPT=" -O0 -g "
+		CFLAGS_OPT=" -O0 -g "
+	fi
+	./configure CXXFLAGS="${CXXFLAGS_OPT}" CFLAGS="${CFLAGS_OPT}"
 }
 
 function configure() {
