@@ -25,6 +25,7 @@ parser.add_argument('--subscribe', action="store_true", help="subscribe uri (pas
 parser.add_argument('--publish', action="store_true", help="publish to topic passed as uri with data")
 parser.add_argument('--address', type=str, help="wamp router address, default localhost")
 
+args = parser.parse_args()
 address = args.address if args.address else "localhost"
 print(address)
 
