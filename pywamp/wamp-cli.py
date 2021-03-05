@@ -58,7 +58,7 @@ async def join(session, details):
     print("joined {}: {}".format(session, details))
     await sleep(1)
     if (args.method and args.uri) :
-      res = await session.call(f"{args.uri}", f'{{"method": "{args.method}", "content": {args.body if args.body else "{{}}"}}}')
+      res = await session.call(f"{args.uri}", f'{{"method": "{args.method}", "content": {args.body if args.body else "{}"}}}')
       print("Result: {}".format(res))
       await session.leave()
     elif (args.subscribe and args.uri):
